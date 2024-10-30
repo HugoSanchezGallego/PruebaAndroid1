@@ -1,3 +1,4 @@
+// MainActivity.kt
 package com.example.pruebaandroid1
 
 import android.os.Bundle
@@ -63,6 +64,7 @@ fun TaskManagerScreen(db: FirebaseFirestore, cleanPendingTasks: () -> Unit) {
     var taskDescription by remember { mutableStateOf("") }
     var tasks by remember { mutableStateOf(listOf<Task>()) }
     var showDoneTasks by remember { mutableStateOf(false) }
+    var isEnglish by remember { mutableStateOf(false) }
 
     LaunchedEffect(showDoneTasks) {
         val collection = if (showDoneTasks) "doneTasks" else "pendingTasks"
@@ -75,7 +77,7 @@ fun TaskManagerScreen(db: FirebaseFirestore, cleanPendingTasks: () -> Unit) {
         TextField(
             value = taskDescription,
             onValueChange = { taskDescription = it },
-            label = { Text("Descripción de la Tarea") },
+            label = { Text(if (isEnglish) "Task Description" else "Descripción de la Tarea") },
             modifier = Modifier.fillMaxWidth()
         )
         Button(
@@ -87,25 +89,32 @@ fun TaskManagerScreen(db: FirebaseFirestore, cleanPendingTasks: () -> Unit) {
             },
             modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
         ) {
-            Text("Añadir Tarea")
+            Text(if (isEnglish) "Add Task" else "Añadir Tarea")
         }
         Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
             Button(onClick = { showDoneTasks = false }, modifier = Modifier.weight(1f)) {
-                Text("Tareas Pendientes")
+                Text(if (isEnglish) "Pending Tasks" else "Tareas Pendientes")
             }
             Button(onClick = { showDoneTasks = true }, modifier = Modifier.weight(1f)) {
-                Text("Tareas Hechas")
+                Text(if (isEnglish) "Done Tasks" else "Tareas Hechas")
             }
+        }
+        Button(
+            onClick = { isEnglish = !isEnglish },
+            modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
+        ) {
+            Text(if (isEnglish) "Switch to Spanish" else "Cambiar a Inglés")
         }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
             items(tasks) { task ->
-                TaskItem(task, db, cleanPendingTasks)
+                TaskItem(task, db, cleanPendingTasks, isEnglish)
             }
         }
     }
 }
+
 @Composable
-fun TaskItem(task: Task, db: FirebaseFirestore, cleanPendingTasks: () -> Unit) {
+fun TaskItem(task: Task, db: FirebaseFirestore, cleanPendingTasks: () -> Unit, isEnglish: Boolean) {
     var expanded by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -114,7 +123,7 @@ fun TaskItem(task: Task, db: FirebaseFirestore, cleanPendingTasks: () -> Unit) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(task.description)
             if (expanded) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     TextButton(onClick = {
                         db.collection("pendingTasks").document(task.id).delete()
                             .addOnSuccessListener {
@@ -122,7 +131,7 @@ fun TaskItem(task: Task, db: FirebaseFirestore, cleanPendingTasks: () -> Unit) {
                                 cleanPendingTasks()
                             }
                     }) {
-                        Text("Marcar como Hecho")
+                        Text(if (isEnglish) "Mark as Done" else "Hecha")
                     }
                     TextButton(onClick = {
                         db.collection("doneTasks").document(task.id).delete()
@@ -131,19 +140,20 @@ fun TaskItem(task: Task, db: FirebaseFirestore, cleanPendingTasks: () -> Unit) {
                                 cleanPendingTasks()
                             }
                     }) {
-                        Text("Marcar como Pendiente")
+                        Text(if (isEnglish) "Mark as Pending" else "Pendiente")
                     }
                     TextButton(onClick = {
                         db.collection("pendingTasks").document(task.id).delete()
                         db.collection("doneTasks").document(task.id).delete()
                     }) {
-                        Text("Borrar")
+                        Text(if (isEnglish) "Delete" else "Borrar")
                     }
                 }
             }
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 fun TaskManagerScreenPreview() {
